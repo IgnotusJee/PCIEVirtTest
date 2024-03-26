@@ -1,1 +1,2 @@
-obj-m   := pciev.o
+#obj-m   := pciev.o
+#pciev-objs	:= main.o

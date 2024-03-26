@@ -1,13 +1,17 @@
 KERNELDIR := /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
-INSTALL_MOD_PATH :=
+
+obj-m   := pciev.o
+pciev-objs	:= main.o
 
 default:
 		$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
-install:
-		$(MAKE) INSTALL_MOD_PATH="$(INSTALL_MOD_PATH)" -C $(KERNELDIR) modules_install
-
 .PHONY: format
 format:
 	clang-format -i *.[ch]
+
+.PHONY: clean
+clean:
+	   $(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+	   rm -f cscope.out tags nvmev.S

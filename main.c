@@ -16,6 +16,7 @@
 
 static int PCIEV_init(void) {
     printk(KERN_INFO "Module load...\n");
+    return 0;
 }
 
 static void PCIEV_exit(void) {
@@ -24,4 +25,4 @@ static void PCIEV_exit(void) {
 
 MODULE_LICENSE("GPL v2");
 module_init(PCIEV_init);
-module_init(PCIEV_exit);
+module_exit(PCIEV_exit);
