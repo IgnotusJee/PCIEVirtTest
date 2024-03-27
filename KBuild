@@ -1,2 +1,3 @@
-#obj-m   := pciev.o
-#pciev-objs	:= main.o
+obj-m   := nvmev.o
+nvmev-objs := main.o pci.o
+ccflags-y += -Wno-unused-variable -Wno-unused-function
