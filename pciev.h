@@ -7,10 +7,32 @@
 #include <linux/types.h>
 
 #define PCIEV_DRV_NAME "PCIEVirt"
+#define PCIEV_VERSION 0x0110
+#define PCIEV_DEVICE_ID PCIEV_VERSION
+#define PCIEV_VENDOR_ID 0x0c51
+#define PCIEV_SUBSYSTEM_ID 0x370d
+#define PCIEV_SUBSYSTEM_VENDOR_ID PCIEV_VENDOR_ID
+
+#ifdef CONFIG_PCIEV_DEBUG
+#define PCIEV_DEBUG(string, args...) printk(KERN_INFO "%s: " string, PCIEV_DRV_NAME, ##args)
+#ifdef CONFIG_PCIEV_DEBUG_VERBOSE
+#define PCIEV_DEBUG_VERBOSE(string, args...) printk(KERN_INFO "%s: " string, PCIEV_DRV_NAME, ##args)
+#else
+#define PCIEV_DEBUG_VERBOSE(string, args...)
+#endif
+#else
+#define PCIEV_DEBUG(string, args...)
+#define PCIEV_DEBUG_VERBOSE(string, args...)
+#endif
 
 #define PCIEV_INFO(string, args...) printk(KERN_INFO "%s: " string, PCIEV_DRV_NAME, ##args)
 #define PCIEV_ERROR(string, args...) printk(KERN_ERR "%s: " string, PCIEV_DRV_NAME, ##args)
 #define PCIEV_ASSERT(x) BUG_ON((!(x)))
+
+#define NR_MAX_IO_QUEUE 72
+#define NR_MAX_PARALLEL_IO 16384
+
+#define PCIEV_INTX_IRQ 15
 
 #define KB(k) ((k) << 10)
 #define MB(m) ((m) << 20)
@@ -43,8 +65,8 @@ struct pciev_dev {
 
 	bool intx_disabled;
 
-	struct __nvme_bar *old_bar;
-	struct nvme_ctrl_regs __iomem *bar;
+	struct __pcie_bar *old_bar;
+	struct pcie_ctrl_regs __iomem *bar;
 
 	u32 *old_dbs;
 	u32 __iomem *dbs;
@@ -53,5 +75,7 @@ struct pciev_dev {
 extern struct pciev_dev *pciev_vdev;
 struct pciev_dev *VDEV_INIT(void);
 void VDEV_FINALIZE(struct pciev_dev *pciev_vdev);
+void pciev_proc_bars(void);
+bool PCIEV_PCI_INIT(struct pciev_dev *dev);
 
-#endif
+#endif /* _LIB_PCIEV_H */

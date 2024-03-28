@@ -1,7 +1,7 @@
-#ifndef _LIB_NVMEV_HDR_H
-#define _LIB_NVMEV_HDR_H
+#ifndef _LIB_PCIEV_HDR_H
+#define _LIB_PCIEV_HDR_H
 
-struct __nvme_bar {
+struct __pcie_bar {
 	uint64_t cap; /* Controller Capabilities */
 	uint32_t vs; /* Version */
 	uint32_t intms; /* Interrupt Mask Set */
@@ -428,7 +428,7 @@ struct pci_ext_cap_dsn {
 	u64 serial;
 };
 
-struct nvme_ctrl_regs {
+struct pcie_ctrl_regs {
 	union {
 		struct {
 			u16 mqes;
@@ -538,8 +538,8 @@ struct nvme_ctrl_regs {
 	//uint32_t			cmbsz;  /* Controller Memory Buffer Size */
 };
 
-#define NVMEV_PCI_DOMAIN_NUM 0x0001
-#define NVMEV_PCI_BUS_NUM 0x10
+#define PCIEV_PCI_DOMAIN_NUM 0x0001
+#define PCIEV_PCI_BUS_NUM 0x10
 
 //[PCI_HEADER][PM_CAP][MSIX_CAP][PCIE_CAP] | [AER_CAP][EXT_CAP]
 #define SZ_PCI_HDR sizeof(struct pci_header) // 0
@@ -565,4 +565,4 @@ enum {
 	CAP_CSS_BIT_NOT_SUPPORTED = (1 << 7),
 };
 
-#endif /* _LIB_NVMEV_HDR_H */
+#endif /* _LIB_PCIEV_HDR_H */
