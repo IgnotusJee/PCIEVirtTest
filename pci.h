@@ -19,8 +19,8 @@ struct __pcie_bar {
 
 struct pci_header {
 	struct {
-		u16 vid;
-		u16 did;
+		u16 vid; // vendor id
+		u16 did; // device id
 	} id;
 	struct {
 		u8 iose : 1;
@@ -35,7 +35,7 @@ struct pci_header {
 		u8 fbe : 1;
 		u8 id : 1;
 		u8 rsvd : 5;
-	} cmd;
+	} cmd; // command register
 	struct {
 		u8 rsvd1 : 3;
 		u8 is : 1;
@@ -50,33 +50,33 @@ struct pci_header {
 		u8 rma : 1;
 		u8 sse : 1;
 		u8 dpe : 1;
-	} sts;
-	u8 rid;
+	} sts; // status register
+	u8 rid; // revision id
 	struct {
-		u8 pi;
-		u8 scc;
-		u8 bcc;
-	} cc;
-	u8 cls;
-	u8 mlt;
+		u8 pi; // class code
+		u8 scc; // subclass code
+		u8 bcc; // Prog IF
+	} cc;	// class code, A read-only register that specifies the type of function the device performs.
+	u8 cls; // cache line size
+	u8 mlt; // latency timer
 	struct {
 		u8 hl : 7;
-		u8 mfd : 1;
-	} htype;
+		u8 mfd : 1; // PCI devices are inherently little-endian
+	} htype; // header type
 	struct {
 		u8 cc : 4;
 		u8 rsvd : 2;
 		u8 sb : 1;
 		u8 bc : 1;
-	} bist;
+	} bist; // BIST
 
 	struct {
-		u32 rte : 1;
-		u32 tp : 2;
-		u32 pf : 1;
-		u32 rsvd : 10;
+		u32 rte : 1; // always 0
+		u32 tp : 2; // type
+		u32 pf : 1; // prefetchable
+		u32 rsvd : 10; // 
 		u32 ba : 18;
-	} mlbar;
+	} mlbar; // bar register
 
 	u32 mulbar;
 	u32 idbar;

@@ -421,17 +421,17 @@ static void PCI_HEADER_SETTINGS(struct pci_header *pcihdr, unsigned long base_pa
 	pcihdr->cmd.id = 1;
 	pcihdr->cmd.bme = 1;
 	*/
-	pcihdr->cmd.mse = 1;
-	pcihdr->sts.cl = 1;
+	pcihdr->cmd.mse = 1; // device can respond to Memory Space accesses
+	pcihdr->sts.cl = 1;	 // the device implements the pointer for a New Capabilities Linked list at offset 0x34
 
-	pcihdr->htype.mfd = 0;
+	pcihdr->htype.mfd = 0; // header type, 0 refer to Endpoints in PCIe
 	pcihdr->htype.hl = PCI_HEADER_TYPE_NORMAL;
 
-	pcihdr->rid = 0x01;
+	pcihdr->rid = 0x01; // revision ID, Specifies a revision identifier for a particular device. Where valid IDs are allocated by the vendor.
 
-	pcihdr->cc.bcc = PCI_BASE_CLASS_STORAGE;
-	pcihdr->cc.scc = 0x08;
-	pcihdr->cc.pi = 0x02;
+	pcihdr->cc.bcc = PCI_BASE_CLASS_STORAGE; // Mass Storage Controller
+	pcihdr->cc.scc = 0x08;					 // Non-Volatile Memory Controller
+	pcihdr->cc.pi = 0x02; // NVM Express
 
 	pcihdr->mlbar.tp = PCI_BASE_ADDRESS_MEM_TYPE_64 >> 1;
 	pcihdr->mlbar.ba = (base_pa & 0xFFFFFFFF) >> 14;
