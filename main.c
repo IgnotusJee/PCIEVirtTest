@@ -146,7 +146,7 @@ static void PCIEV_exit(void) {
 
 	VDEV_FINALIZE(pciev_vdev);
 
-	PCIEV_INFO("Virtual NVMe device closed\n");
+	PCIEV_INFO("Virtual PCIE device closed\n");
 }
 
 MODULE_LICENSE("GPL v2");
