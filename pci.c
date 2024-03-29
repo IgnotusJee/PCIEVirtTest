@@ -429,12 +429,16 @@ static void PCI_HEADER_SETTINGS(struct pci_header *pcihdr, unsigned long base_pa
 
 	pcihdr->rid = 0x01; // revision ID, Specifies a revision identifier for a particular device. Where valid IDs are allocated by the vendor.
 
-	pcihdr->cc.bcc = PCI_BASE_CLASS_STORAGE; // Mass Storage Controller
-	pcihdr->cc.scc = 0x08;					 // Non-Volatile Memory Controller
-	pcihdr->cc.pi = 0x02; // NVM Express
+	// pcihdr->cc.bcc = PCI_BASE_CLASS_STORAGE; // Mass Storage Controller
+	// pcihdr->cc.scc = 0x08;					 // Non-Volatile Memory Controller
+	// pcihdr->cc.pi = 0x02; // NVM Express
 
-	pcihdr->mlbar.tp = PCI_BASE_ADDRESS_MEM_TYPE_64 >> 1;
-	pcihdr->mlbar.ba = (base_pa & 0xFFFFFFFF) >> 14;
+	pcihdr->cc.bcc = PCI_BASE_CLASS_STORAGE; // Mass Storage Controller
+	pcihdr->cc.scc = 0x06;					 // Serial ATA Controller
+	pcihdr->cc.pi = 0x01;					 // AHCI 1.0
+
+	pcihdr->mlbar.tp = PCI_BASE_ADDRESS_MEM_TYPE_64 >> 1; // the base register is 64-bits wide and can be mapped anywhere in the 64-bit Memory Space
+	pcihdr->mlbar.ba = (base_pa & 0xFFFFFFFF) >> 14; // minimum address space is 2^14 = 16KB
 
 	pcihdr->mulbar = base_pa >> 32;
 
