@@ -17,10 +17,11 @@ struct __pcie_bar {
 	uint32_t cmbsz; /* Controller Memory Buffer Size */
 };
 
+// pci configuration uses little-endian
 struct pci_header {
 	struct {
-		u16 vid; // vendor id
-		u16 did; // device id
+		u16 vid; // vendor id, specify hardware manufacturer
+		u16 did; // device id, given by hardware manufacturer
 	} id;
 	struct {
 		u8 iose : 1;
@@ -71,65 +72,75 @@ struct pci_header {
 	} bist; // BIST
 
 	struct {
-		u32 rte : 1; // always 0
+		u32 rte : 1; // 0 for Memory Space, 1 for IO Space
 		u32 tp : 2; // type
 		u32 pf : 1; // prefetchable
-		u32 rsvd : 10; // 
-		u32 ba : 18;
+		u32 rsvd : 10; // lowbits, all zero, reserved(totally 14bits)
+		u32 ba : 18; // valued bits
 	} mlbar; // bar register
 
-	u32 mulbar;
+	u32 mulbar; // higher part of 64bit bar
 	u32 idbar;
 
 	u32 bar3;
 	u32 bar4;
 	u32 bar5;
 
-	u32 ccptr;
+	u32 ccptr; // Cardbus CIS Pointer
 
 	struct {
-		u16 ssvid;
-		u16 ssid;
+		u16 ssvid; // Subsystem Vendor ID
+		u16 ssid; // Subsystem ID
 	} ss;
 
-	u32 erom;
-	u8 cap;
-	u8 rsvd[7];
+	u32 erom; // Expansion ROM base address
+	u8 cap;	  // Capabilities Pointer, Points to a linked list of new capabilities implemented by the device
+	u8 rsvd[7]; // Reserved Region
 	struct {
-		u8 iline;
-		u8 ipin;
+		u8 iline; // Interrupt Line
+		/*
+			Specifies which input of the system interrupt controllers the device's interrupt pin is connected to
+			and is implemented by any device that makes use of an interrupt pin. For the x86 architecture this
+			register corresponds to the PIC IRQ numbers 0-15 (and not I/O APIC IRQ numbers) and
+			a value of 0xFF defines no connection.
+		*/
+		u8 ipin;  // Interrupt PIN
+		/*
+			Specifies which interrupt pin the device uses. Where a value of 0x1 is INTA#, 0x2 is INTB#,
+			0x3 is INTC#, 0x4 is INTD#, and 0x0 means the device does not use an interrupt pin.
+		*/
 	} intr;
 
-	u8 mgnt;
-	u8 mlat;
+	u8 mgnt; // Min Grant, A read-only register that specifies the burst period length, in 1/4 microsecond units, that the device needs (assuming a 33 MHz clock rate).
+	u8 mlat; // Max latency, A read-only register that specifies how often the device needs access to the PCI bus (in 1/4 microsecond units)
 };
 
 struct pci_pm_cap {
 	struct {
-		u8 cid;
-		u8 next;
+		u8 cid; // Capability Identifier
+		u8 next; // Next Item Pointer
 	} pid;
 	struct {
-		u16 vs : 3;
-		u16 pmec : 1;
-		u16 resv : 1;
-		u16 dsi : 1;
-		u16 auxc : 3;
-		u16 d1s : 1;
-		u16 d2s : 1;
-		u16 psup : 5;
-	} pc;
+		u16 vs : 3; // Version
+		u16 pmec : 1; // PME Clock
+		u16 resv : 1; // Reserved
+		u16 dsi : 1;  // The Device Specific Initialization bit, indicates whether special initialization of this function is required
+		u16 auxc : 3; // Aux_Current, This 3 bit field reports the 3.3Vaux auxiliary current requirements for the PCI function.
+		u16 d1s : 1;  // D1 Power Management State support or not
+		u16 d2s : 1;  // D2 Power Management State support or not
+		u16 psup : 5; // PME Support
+	} pc; // Power Management Capabilities, read only
 	struct {
-		u16 ps : 2;
-		u16 rsvd01 : 1;
-		u16 nsfrst : 1;
-		u16 rsvd02 : 4;
-		u16 pmee : 1;
-		u16 dse : 4;
-		u16 dsc : 2;
-		u16 pmes : 1;
-	} pmcs;
-	u8 ext[2];
+		u16 ps : 2; // PowerState
+		u16 rsvd01 : 1; // Reserved for PCI Express
+		u16 nsfrst : 1; // No_Soft_Reset
+		u16 rsvd02 : 4; // Reserved
+		u16 pmee : 1;	// PME_En
+		u16 dse : 4;	// Data_Select
+		u16 dsc : 2;	// Data_Scale
+		u16 pmes : 1;	// PME_Status
+	} pmcs; // Power Management Control/Status
+	u8 ext[2]; // PMCSR_BSE and Data
 };
 
 struct pci_msi_cap {
@@ -155,18 +166,18 @@ struct pci_msix_cap {
 		u8 next;
 	} mxid;
 	struct {
-		u16 ts : 11;
-		u16 rsvd : 3;
-		u16 fm : 1;
-		u16 mxe : 1;
-	} mxc;
+		u16 ts : 11; // Table Size
+		u16 rsvd : 3; // Reserved
+		u16 fm : 1;	  // Function Mask
+		u16 mxe : 1;  // MSI-X Enable
+	} mxc; // Message Control
 	struct {
-		u32 tbir : 3;
-		u32 to : 29;
+		u32 tbir : 3; // BIR, which bar is used for message table
+		u32 to : 29; // Table Offset, 8-byte aligned
 	} mtab;
 	struct {
-		u32 pbir : 3;
-		u32 pbao : 29;
+		u32 pbir : 3; // Pending Bit BIR
+		u32 pbao : 29; // Pending Bit Offset
 	} mpba;
 };
 
@@ -176,26 +187,26 @@ struct pcie_cap {
 		u8 next;
 	} pxid;
 	struct {
-		u8 ver : 4;
-		u8 dpt : 4;
-		u8 si : 1;
-		u8 imn : 5;
-		u8 rsvd : 2;
-	} pxcap;
+		u16 ver : 4; // Capability Version
+		u16 dpt : 4; // Device/Port Type - Indicates the specific type of this PCI Express Function.
+		u16 si : 1;	 // Slot Implemented
+		u16 imn : 5; // Interrupt Message Number - For MSI-X, the value in this field indicates which MSI-X Table entry is used to generate the interrupt message
+		u16 rsvd : 2;
+	} pxcap; // PCI Express Capabilities Register
 	struct {
-		u32 mps : 3;
-		u32 pfs : 2;
-		u32 etfs : 1;
-		u32 l0sl : 3;
-		u32 l1l : 3;
+		u32 mps : 3; // Max_Payload_Size Supported
+		u32 pfs : 2; // Phantom Functions Supported
+		u32 etfs : 1; // Extended Tag Field Supported
+		u32 l0sl : 3; // Endpoint L0s Acceptable Latency
+		u32 l1l : 3;  // Endpoint L1 Acceptable Latency
 		u32 rsvd : 3;
-		u32 rer : 1;
+		u32 rer : 1; // Role-Based Error Reporting
 		u32 rsvd2 : 2;
-		u32 csplv : 8;
-		u32 cspls : 2;
-		u32 flrc : 1;
+		u32 csplv : 8; // Captured Slot Power Limit Value
+		u32 cspls : 2; // Captured Slot Power Limit Scale
+		u32 flrc : 1;  // Function Level Reset Capability
 		u32 rsvd3 : 3;
-	} pxdcap;
+	} pxdcap; // Device Capabilities Register
 	struct {
 		u16 cere : 1;
 		u16 nfere : 1;
@@ -209,7 +220,7 @@ struct pcie_cap {
 		u16 ens : 1;
 		u16 mrrs : 3;
 		u16 iflr : 1;
-	} pxdc;
+	} pxdc; // Device Control Register
 	struct {
 		u16 ced : 1;
 		u16 nfed : 1;
@@ -218,7 +229,7 @@ struct pcie_cap {
 		u16 apd : 1;
 		u16 tp : 1;
 		u16 rsvd : 10;
-	} pxds;
+	} pxds; // Device Status Register
 	struct {
 		u32 sls : 4;
 		u32 mlw : 6;
@@ -232,7 +243,7 @@ struct pcie_cap {
 		u32 aoc : 1;
 		u32 rsvd : 1;
 		u32 pn : 8;
-	} pxlcap;
+	} pxlcap; // Link Capabilities
 	struct {
 		u16 aspmc : 2;
 		u16 rsvd : 1;
@@ -243,14 +254,14 @@ struct pcie_cap {
 		u16 ecpm : 1;
 		u16 hawd : 1;
 		u16 rsvd3 : 6;
-	} pxlc;
+	} pxlc; // Link Control
 	struct {
 		u16 clc : 4;
 		u16 nlw : 6;
 		u16 rsvd : 2;
 		u16 scc : 1;
 		u16 rsvd2 : 3;
-	} pxls;
+	} pxls; // Link Status
 	struct {
 		u32 ctrs : 4;
 		u32 ctds : 1;
@@ -268,7 +279,7 @@ struct pcie_cap {
 		u32 eetps : 1;
 		u32 meetp : 2;
 		u32 rsvd2 : 8;
-	} pxdcap2;
+	} pxdcap2; // Device Capabilities 2
 	struct {
 		u32 ctv : 4;
 		u32 ctd : 1;
@@ -277,14 +288,14 @@ struct pcie_cap {
 		u32 rsvd2 : 2;
 		u32 obffe : 2;
 		u32 rsvd3 : 17;
-	} pxdc2;
-};
+	} pxdc2; // Device Control 2 and Device Status 2
+}; // Device with Links
 
 struct pci_ext_cap {
-	u16 cid;
-	u16 cver : 4;
-	u16 next : 12;
-};
+	u16 cid; // PCI Express Extended Capability ID
+	u16 cver : 4; // Capability Version
+	u16 next : 12; // Next Capability Offset
+}; // PCI Express Extended Capability Header
 
 struct pci_ext_cap_aer {
 	struct pci_ext_cap id;
@@ -426,116 +437,6 @@ struct pci_ext_cap_aer {
 struct pci_ext_cap_dsn {
 	struct pci_ext_cap id;
 	u64 serial;
-};
-
-struct pcie_ctrl_regs {
-	union {
-		struct {
-			u16 mqes;
-			u16 cqr : 1;
-			u16 ams : 2;
-			u16 rsvd : 5;
-			u16 to : 8;
-			u16 dstrd : 4;
-			u16 nssrs : 1;
-			u16 css : 8;
-			u16 rsvd2 : 3;
-			u16 mpsmin : 4;
-			u16 mpsmax : 4;
-			u16 rsvd3 : 8;
-		} cap;
-		u64 u_cap;
-	};
-	//uint64_t			cap;	/* Controller Capabilities */
-	union {
-		struct {
-			u8 rsvd;
-			u8 mnr;
-			u16 mjr;
-		} vs;
-		u32 u_vs;
-	};
-	//uint32_t			vs;	/* Version */
-	u32 intms; /* Interrupt Mask Set */
-	u32 intmc; /* Interrupt Mask Clear */
-	union {
-		struct {
-			u16 en : 1;
-			u16 rsvd : 3;
-			u16 css : 3;
-			u16 mps : 4;
-			u16 ams : 3;
-			u16 shn : 2;
-			u16 iosqes : 4;
-			u16 iocqes : 4;
-			u16 rsvd2 : 8;
-		} cc;
-		u32 u_cc;
-	};
-	//uint32_t			cc;	/* Controller Configuration */
-	u32 rsvd1; /* Reserved */
-	union {
-		struct {
-			u32 rdy : 1;
-			u32 cfs : 1;
-			u32 shst : 2;
-			u32 nssro : 1;
-			u32 pp : 1;
-			u32 rsvd : 26;
-		} csts;
-		u32 u_csts;
-	};
-	//uint32_t			csts;	/* Controller Status */
-	u32 nssr; /* Subsystem Reset */
-	union {
-		struct {
-			u32 asqs : 12;
-			u32 rsvd1 : 4;
-			u32 acqs : 12;
-			u32 rsvd2 : 4;
-		} aqa;
-		u32 u_aqa;
-	};
-	//uint32_t			aqa;	/* Admin Queue Attributes */
-	union {
-		struct {
-			u64 rsvd : 12;
-			u64 asqb : 52;
-		} asq;
-		u64 u_asq;
-	};
-	//uint64_t			asq;	/* Admin SQ Base Address */
-	union {
-		struct {
-			u64 rsvd : 12;
-			u64 acqb : 52;
-		} acq;
-		u64 u_acq;
-	};
-	//uint64_t			acq;	/* Admin CQ Base Address */
-	union {
-		struct {
-			u32 bir : 3;
-			u32 rsvd : 9;
-			u32 ofst : 20;
-		} cmbloc;
-		u32 u_cmbloc;
-	};
-	//uint32_t			cmbloc; /* Controller Memory Buffer Location */
-	union {
-		struct {
-			u32 sqs : 1;
-			u32 cqs : 1;
-			u32 lists : 1;
-			u32 rds : 1;
-			u32 wds : 1;
-			u32 rsvd : 3;
-			u32 szu : 4;
-			u32 sz : 20;
-		} cmbsz;
-		u32 u_cmbsz;
-	};
-	//uint32_t			cmbsz;  /* Controller Memory Buffer Size */
 };
 
 #define PCIEV_PCI_DOMAIN_NUM 0x0001

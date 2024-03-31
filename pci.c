@@ -339,7 +339,7 @@ static struct pci_bus *__create_pci_bus(void)
 	struct pci_bus *bus = NULL;
 	struct pci_dev *dev;
 
-	bus = pci_scan_bus(PCIEV_PCI_BUS_NUM, &pciev_pci_ops, &pciev_pci_sysdata);
+	bus = pci_scan_bus(PCIEV_PCI_BUS_NUM, &pciev_pci_ops, &pciev_pci_sysdata); // 扫描总线设备
 
 	if (!bus) {
 		PCIEV_ERROR("Unable to create PCI bus\n");
@@ -349,7 +349,7 @@ static struct pci_bus *__create_pci_bus(void)
 	/* XXX Only support a singe NVMeVirt instance in the system for now */
 	list_for_each_entry(dev, &bus->devices, bus_list) {
 		struct resource *res = &dev->resource[0];
-		res->parent = &iomem_resource;
+		res->parent = &iomem_resource; // 
 
 		pciev_vdev->pdev = dev;
 		dev->irq = pciev_vdev->pcihdr->intr.iline;
@@ -433,9 +433,13 @@ static void PCI_HEADER_SETTINGS(struct pci_header *pcihdr, unsigned long base_pa
 	// pcihdr->cc.scc = 0x08;					 // Non-Volatile Memory Controller
 	// pcihdr->cc.pi = 0x02; // NVM Express
 
-	pcihdr->cc.bcc = PCI_BASE_CLASS_STORAGE; // Mass Storage Controller
-	pcihdr->cc.scc = 0x06;					 // Serial ATA Controller
-	pcihdr->cc.pi = 0x01;					 // AHCI 1.0
+	// pcihdr->cc.bcc = PCI_BASE_CLASS_STORAGE; // Mass Storage Controller
+	// pcihdr->cc.scc = 0x06;					 // Serial ATA Controller
+	// pcihdr->cc.pi = 0x01;					 // AHCI 1.0
+
+	pcihdr->cc.bcc = 0x00;
+	pcihdr->cc.scc = 0x00;
+	pcihdr->cc.pi = 0x00;
 
 	pcihdr->mlbar.tp = PCI_BASE_ADDRESS_MEM_TYPE_64 >> 1; // the base register is 64-bits wide and can be mapped anywhere in the 64-bit Memory Space
 	pcihdr->mlbar.ba = (base_pa & 0xFFFFFFFF) >> 14; // minimum address space is 2^14 = 16KB
@@ -445,9 +449,9 @@ static void PCI_HEADER_SETTINGS(struct pci_header *pcihdr, unsigned long base_pa
 	pcihdr->ss.ssid = PCIEV_SUBSYSTEM_ID;
 	pcihdr->ss.ssvid = PCIEV_SUBSYSTEM_VENDOR_ID;
 
-	pcihdr->erom = 0x0;
+	pcihdr->erom = 0x0; // disable expansion ROM
 
-	pcihdr->cap = OFFS_PCI_PM_CAP;
+	pcihdr->cap = OFFS_PCI_PM_CAP; // power management capability
 
 	pcihdr->intr.ipin = 0;
 	pcihdr->intr.iline = PCIEV_INTX_IRQ;
@@ -455,12 +459,11 @@ static void PCI_HEADER_SETTINGS(struct pci_header *pcihdr, unsigned long base_pa
 
 static void PCI_PMCAP_SETTINGS(struct pci_pm_cap *pmcap)
 {
-	pmcap->pid.cid = PCI_CAP_ID_PM;
-	pmcap->pid.next = OFFS_PCI_MSIX_CAP;
+	pmcap->pid.cid = PCI_CAP_ID_PM; // indicates that the data structure currently being pointed to is the PCI Power Management data structure
+	pmcap->pid.next = OFFS_PCI_MSIX_CAP; // describes the location of the next item in the function’s capability list
 
-	pmcap->pc.vs = 3;
-	pmcap->pmcs.nsfrst = 1;
-	pmcap->pmcs.ps = PCI_PM_CAP_PME_D0 >> 16;
+	pmcap->pc.vs = 3; // 011b indicates that this function complies with revision 1.2 of the PCI Power Management	Interface Specification.pmcap->pmcs.nsfrst = 1;
+	pmcap->pmcs.ps = PCI_PM_CAP_PME_D0 >> 16; // current power state is D0
 }
 
 static void PCI_MSIXCAP_SETTINGS(struct pci_msix_cap *msixcap)
@@ -468,14 +471,14 @@ static void PCI_MSIXCAP_SETTINGS(struct pci_msix_cap *msixcap)
 	msixcap->mxid.cid = PCI_CAP_ID_MSIX;
 	msixcap->mxid.next = OFFS_PCIE_CAP;
 
-	msixcap->mxc.mxe = 1;
-	msixcap->mxc.ts = 127; // encoded as n-1
+	msixcap->mxc.ts = 127; // 0x80, encoded as n-1
+	msixcap->mxc.mxe = 1; // enable MSI-X
 
 	msixcap->mtab.tbir = 0;
 	msixcap->mtab.to = 0x400;
 
-	msixcap->mpba.pbao = 0x1000;
 	msixcap->mpba.pbir = 0;
+	msixcap->mpba.pbao = 0x1000;
 }
 
 static void PCI_PCIECAP_SETTINGS(struct pcie_cap *pciecap)
@@ -485,17 +488,17 @@ static void PCI_PCIECAP_SETTINGS(struct pcie_cap *pciecap)
 
 	pciecap->pxcap.ver = PCI_EXP_FLAGS;
 	pciecap->pxcap.imn = 0;
-	pciecap->pxcap.dpt = PCI_EXP_TYPE_ENDPOINT;
+	pciecap->pxcap.dpt = PCI_EXP_TYPE_ENDPOINT; // endpoint function
 
-	pciecap->pxdcap.mps = 1;
-	pciecap->pxdcap.pfs = 0;
-	pciecap->pxdcap.etfs = 1;
-	pciecap->pxdcap.l0sl = 6;
-	pciecap->pxdcap.l1l = 2;
-	pciecap->pxdcap.rer = 1;
+	pciecap->pxdcap.mps = 1; // 256 bytes max payload size
+	pciecap->pxdcap.pfs = 0; // No Function Number bits are used for Phantom Functions
+	pciecap->pxdcap.etfs = 1; // 8-bit Tag field supported
+	pciecap->pxdcap.l0sl = 6; // Maximum of 4 μs
+	pciecap->pxdcap.l1l = 2;  // Maximum of 4 μs
+	pciecap->pxdcap.rer = 1; // enable
 	pciecap->pxdcap.csplv = 0;
-	pciecap->pxdcap.cspls = 0;
-	pciecap->pxdcap.flrc = 1;
+	pciecap->pxdcap.cspls = 0; // 1.0x
+	pciecap->pxdcap.flrc = 1;  // the Function supports the optional Function Level Reset mechanism
 }
 
 static void PCI_EXTCAP_SETTINGS(struct pci_ext_cap *ext_cap)
