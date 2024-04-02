@@ -239,23 +239,23 @@ static int pciev_pci_write(struct pci_bus *bus, unsigned int devfn, int where, i
 	if (where < OFFS_PCI_PM_CAP) {
 		// PCI_HDR
 		if (target == PCI_COMMAND) {
-			mask = PCI_COMMAND_INTX_DISABLE;
+			mask = PCI_COMMAND_INTX_DISABLE; // Interrupt Disable
 			if ((val ^ _val) & PCI_COMMAND_INTX_DISABLE) {
 				pciev_vdev->intx_disabled = !!(_val & PCI_COMMAND_INTX_DISABLE);
 				if (!pciev_vdev->intx_disabled) {
-					pciev_vdev->pcihdr->sts.is = 0;
+					pciev_vdev->pcihdr->sts.is = 0; // only disable no enable?
 				}
 			}
 		} else if (target == PCI_STATUS) {
-			mask = 0xF200;
+			mask = 0xF200; // ?
 		} else if (target == PCI_BIST) {
-			mask = PCI_BIST_START;
+			mask = PCI_BIST_START; // Start BIST
 		} else if (target == PCI_BASE_ADDRESS_0) {
-			mask = 0xFFFFC000;
+			mask = 0xFFFFC000; // bar, lower 14 bits read only
 		} else if (target == PCI_INTERRUPT_LINE) {
-			mask = 0xFF;
+			mask = 0xFF; // Max latency, Min Grant, Interrupt PIN, Interrupt Line
 		} else {
-			mask = 0x0;
+			mask = 0x0; // otherwise read only
 		}
 	} else if (where < OFFS_PCI_MSIX_CAP) {
 		// PCI_PM_CAP
@@ -289,11 +289,11 @@ static int pciev_pci_write(struct pci_bus *bus, unsigned int devfn, int where, i
 static struct pci_ops pciev_pci_ops = {
 	.read = pciev_pci_read,
 	.write = pciev_pci_write,
-};
+}; // specify how to read and write PCIE configuration space
 
 static struct pci_sysdata pciev_pci_sysdata = {
-	.domain = PCIEV_PCI_DOMAIN_NUM,
-	.node = 0,
+	.domain = PCIEV_PCI_DOMAIN_NUM, // PCI domain, identify host bridge number(?)
+	.node = 0, // NUMA node
 };
 
 static void __dump_pci_dev(struct pci_dev *dev)
@@ -312,26 +312,26 @@ static void __dump_pci_dev(struct pci_dev *dev)
 
 static void __init_pcie_ctrl_regs(struct pci_dev *dev)
 {
-	struct pcie_ctrl_regs *bar =
-		memremap(pci_resource_start(dev, 0), PAGE_SIZE * 2, MEMREMAP_WT);
-	BUG_ON(!bar);
+	// struct pcie_ctrl_regs *bar =
+	// 	memremap(pci_resource_start(dev, 0), PAGE_SIZE * 2, MEMREMAP_WT);
+	// BUG_ON(!bar);
 
-	pciev_vdev->bar = bar;
-	memset(bar, 0x0, PAGE_SIZE * 2);
+	// pciev_vdev->bar = bar;
+	// memset(bar, 0x0, PAGE_SIZE * 2);
 
-	pciev_vdev->dbs = ((void *)bar) + PAGE_SIZE;
+	// pciev_vdev->dbs = ((void *)bar) + PAGE_SIZE;
 
-	*bar = (struct pcie_ctrl_regs) {
-		.cap = {
-			.to = 1,
-			.mpsmin = 0,
-			.mqes = 1024 - 1, // 0-based value
-		},
-		.vs = {
-			.mjr = 1,
-			.mnr = 0,
-		},
-	};
+	// *bar = (struct pcie_ctrl_regs) {
+	// 	.cap = {
+	// 		.to = 1,
+	// 		.mpsmin = 0,
+	// 		.mqes = 1024 - 1, // 0-based value
+	// 	},
+	// 	.vs = {
+	// 		.mjr = 1,
+	// 		.mnr = 0,
+	// 	},
+	// };
 }
 
 static struct pci_bus *__create_pci_bus(void)
@@ -339,7 +339,7 @@ static struct pci_bus *__create_pci_bus(void)
 	struct pci_bus *bus = NULL;
 	struct pci_dev *dev;
 
-	bus = pci_scan_bus(PCIEV_PCI_BUS_NUM, &pciev_pci_ops, &pciev_pci_sysdata); // 扫描总线设备
+	bus = pci_scan_bus(PCIEV_PCI_BUS_NUM, &pciev_pci_ops, &pciev_pci_sysdata); // Scans the complete bus and update into the pci access structure(?)
 
 	if (!bus) {
 		PCIEV_ERROR("Unable to create PCI bus\n");
@@ -349,17 +349,17 @@ static struct pci_bus *__create_pci_bus(void)
 	/* XXX Only support a singe NVMeVirt instance in the system for now */
 	list_for_each_entry(dev, &bus->devices, bus_list) {
 		struct resource *res = &dev->resource[0];
-		res->parent = &iomem_resource; // 
+		res->parent = &iomem_resource; // identify resource tree
 
 		pciev_vdev->pdev = dev;
-		dev->irq = pciev_vdev->pcihdr->intr.iline;
-		__dump_pci_dev(dev);
+		dev->irq = pciev_vdev->pcihdr->intr.iline; // Interrupt Line
+		// __dump_pci_dev(dev);
 
-		__init_pcie_ctrl_regs(dev);
+		// __init_pcie_ctrl_regs(dev);
 
-		pciev_vdev->old_dbs = kzalloc(PAGE_SIZE, GFP_KERNEL);
-		BUG_ON(!pciev_vdev->old_dbs && "allocating old DBs memory");
-		memcpy(pciev_vdev->old_dbs, pciev_vdev->dbs, sizeof(*pciev_vdev->old_dbs));
+		// pciev_vdev->old_dbs = kzalloc(PAGE_SIZE, GFP_KERNEL);
+		// BUG_ON(!pciev_vdev->old_dbs && "allocating old DBs memory");
+		// memcpy(pciev_vdev->old_dbs, pciev_vdev->dbs, sizeof(*pciev_vdev->old_dbs));
 
 		pciev_vdev->old_bar = kzalloc(PAGE_SIZE, GFP_KERNEL);
 		BUG_ON(!pciev_vdev->old_bar && "allocating old BAR memory");
@@ -403,8 +403,8 @@ void VDEV_FINALIZE(struct pciev_dev *pciev_vdev)
 	if (pciev_vdev->old_bar)
 		kfree(pciev_vdev->old_bar);
 
-	if (pciev_vdev->old_dbs)
-		kfree(pciev_vdev->old_dbs);
+	// if (pciev_vdev->old_dbs)
+	// 	kfree(pciev_vdev->old_dbs);
 
 	if (pciev_vdev->virtDev)
 		kfree(pciev_vdev->virtDev);
