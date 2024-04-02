@@ -69,9 +69,9 @@ void pciev_signal_irq(int msi_index)
  */
 void pciev_proc_bars(void)
 {
-	volatile struct __pcie_bar *old_bar = pciev_vdev->old_bar;
-	volatile struct pcie_ctrl_regs *bar = pciev_vdev->bar;
-	unsigned int num_pages, i;
+	// volatile struct __pcie_bar *old_bar = pciev_vdev->old_bar;
+	// volatile struct pcie_ctrl_regs *bar = pciev_vdev->bar;
+	// unsigned int num_pages, i;
 
 #if 0 /* Read-only register */
 	if (old_bar->cap != bar->u_cap) {
@@ -361,9 +361,9 @@ static struct pci_bus *__create_pci_bus(void)
 		// BUG_ON(!pciev_vdev->old_dbs && "allocating old DBs memory");
 		// memcpy(pciev_vdev->old_dbs, pciev_vdev->dbs, sizeof(*pciev_vdev->old_dbs));
 
-		pciev_vdev->old_bar = kzalloc(PAGE_SIZE, GFP_KERNEL);
-		BUG_ON(!pciev_vdev->old_bar && "allocating old BAR memory");
-		memcpy(pciev_vdev->old_bar, pciev_vdev->bar, sizeof(*pciev_vdev->old_bar));
+		// pciev_vdev->old_bar = kzalloc(PAGE_SIZE, GFP_KERNEL);
+		// BUG_ON(!pciev_vdev->old_bar && "allocating old BAR memory");
+		// memcpy(pciev_vdev->old_bar, pciev_vdev->bar, sizeof(*pciev_vdev->old_bar));
 
 		pciev_vdev->msix_table =
 			memremap(pci_resource_start(pciev_vdev->pdev, 0) + PAGE_SIZE * 2,
@@ -397,11 +397,11 @@ void VDEV_FINALIZE(struct pciev_dev *pciev_vdev)
 	if (pciev_vdev->msix_table)
 		memunmap(pciev_vdev->msix_table);
 
-	if (pciev_vdev->bar)
-		memunmap(pciev_vdev->bar);
+	// if (pciev_vdev->bar)
+	// 	memunmap(pciev_vdev->bar);
 
-	if (pciev_vdev->old_bar)
-		kfree(pciev_vdev->old_bar);
+	// if (pciev_vdev->old_bar)
+	// 	kfree(pciev_vdev->old_bar);
 
 	// if (pciev_vdev->old_dbs)
 	// 	kfree(pciev_vdev->old_dbs);
