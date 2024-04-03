@@ -64,12 +64,6 @@ struct pciev_dev {
 	void __iomem *msix_table;
 
 	bool intx_disabled;
-
-	// struct __pcie_bar *old_bar;
-	// struct pcie_ctrl_regs __iomem *bar;
-
-	// u32 *old_dbs;
-	// u32 __iomem *dbs;
 };
 
 extern struct pciev_dev *pciev_vdev;

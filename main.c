@@ -38,7 +38,6 @@ MODULE_PARM_DESC(memmap_start, "Reserved memory address");
 module_param_cb(memmap_size, &ops_parse_mem_param, &memmap_size, 0444);
 MODULE_PARM_DESC(memmap_size, "Reserved memory size");
 
-#ifdef CONFIG_X86
 static int __validate_configs_arch(void)
 {
 	unsigned long resv_start_bytes;
@@ -61,13 +60,6 @@ static int __validate_configs_arch(void)
 	}
 	return 0;
 }
-#else
-static int __validate_configs_arch(void)
-{
-	/* TODO: Validate architecture-specific configurations */
-	return 0;
-}
-#endif
 
 static int __validate_configs(void)
 {
