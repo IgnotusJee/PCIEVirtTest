@@ -1,20 +1,9 @@
 #ifndef _LIB_PCIEV_HDR_H
 #define _LIB_PCIEV_HDR_H
 
-struct __pcie_bar {
-	uint64_t cap; /* Controller Capabilities */
-	uint32_t vs; /* Version */
-	uint32_t intms; /* Interrupt Mask Set */
-	uint32_t intmc; /* Interrupt Mask Clear */
-	uint32_t cc; /* Controller Configuration */
-	uint32_t rsvd1; /* Reserved */
-	uint32_t csts; /* Controller Status */
-	uint32_t nssr; /* Subsystem Reset */
-	uint32_t aqa; /* Admin Queue Attributes */
-	uint64_t asq; /* Admin SQ Base Address */
-	uint64_t acq; /* Admin CQ Base Address */
-	uint32_t cmbloc; /* Controller Memory Buffer Location */
-	uint32_t cmbsz; /* Controller Memory Buffer Size */
+struct pciev_bar {
+	uint64_t io_cnt;
+	uint64_t storage_offset;
 };
 
 // pci configuration uses little-endian

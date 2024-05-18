@@ -66,7 +66,7 @@ struct pciev_dev {
 	bool intx_disabled;
 
 	// struct __pcie_bar *old_bar;
-	// struct pcie_ctrl_regs __iomem *bar;
+	struct pciev_bar __iomem *bar;
 
 	// u32 *old_dbs;
 	// u32 __iomem *dbs;

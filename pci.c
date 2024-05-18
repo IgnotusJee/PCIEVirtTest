@@ -70,7 +70,7 @@ void pciev_signal_irq(int msi_index)
 void pciev_proc_bars(void)
 {
 	// volatile struct __pcie_bar *old_bar = pciev_vdev->old_bar;
-	// volatile struct pcie_ctrl_regs *bar = pciev_vdev->bar;
+	// volatile struct pciev_bar *bar = pciev_vdev->bar;
 	// unsigned int num_pages, i;
 
 #if 0 /* Read-only register */
@@ -310,18 +310,20 @@ static void __dump_pci_dev(struct pci_dev *dev)
 	*/
 }
 
-static void __init_pcie_ctrl_regs(struct pci_dev *dev)
+static void __init_pciev_bar(struct pci_dev *dev)
 {
-	// struct pcie_ctrl_regs *bar =
-	// 	memremap(pci_resource_start(dev, 0), PAGE_SIZE * 2, MEMREMAP_WT);
-	// BUG_ON(!bar);
+	struct pciev_bar *bar =
+		memremap(pci_resource_start(dev, 0), PAGE_SIZE, MEMREMAP_WT);
+	BUG_ON(!bar);
 
-	// pciev_vdev->bar = bar;
-	// memset(bar, 0x0, PAGE_SIZE * 2);
+	pciev_vdev->bar = bar;
+	memset(bar, 0x0, PAGE_SIZE);
+
+	bar->storage_offset = MB(1);
 
 	// pciev_vdev->dbs = ((void *)bar) + PAGE_SIZE;
 
-	// *bar = (struct pcie_ctrl_regs) {
+	// *bar = (struct pciev_bar) {
 	// 	.cap = {
 	// 		.to = 1,
 	// 		.mpsmin = 0,
@@ -355,7 +357,7 @@ static struct pci_bus *__create_pci_bus(void)
 		dev->irq = pciev_vdev->pcihdr->intr.iline; // Interrupt Line
 		// __dump_pci_dev(dev);
 
-		// __init_pcie_ctrl_regs(dev);
+		__init_pciev_bar(dev);
 
 		// pciev_vdev->old_dbs = kzalloc(PAGE_SIZE, GFP_KERNEL);
 		// BUG_ON(!pciev_vdev->old_dbs && "allocating old DBs memory");
@@ -397,8 +399,8 @@ void VDEV_FINALIZE(struct pciev_dev *pciev_vdev)
 	if (pciev_vdev->msix_table)
 		memunmap(pciev_vdev->msix_table);
 
-	// if (pciev_vdev->bar)
-	// 	memunmap(pciev_vdev->bar);
+	if (pciev_vdev->bar)
+		memunmap(pciev_vdev->bar);
 
 	// if (pciev_vdev->old_bar)
 	// 	kfree(pciev_vdev->old_bar);
