@@ -1,1 +1,0 @@
-cmd_/home/ignotus/workspace/PCIEVirtTest/Module.symvers := sed 's/\.ko$$/\.o/' /home/ignotus/workspace/PCIEVirtTest/modules.order | scripts/mod/modpost -m -a  -o /home/ignotus/workspace/PCIEVirtTest/Module.symvers -e -i Module.symvers   -T -

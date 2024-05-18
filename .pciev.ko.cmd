@@ -1,1 +1,0 @@
-cmd_/home/ignotus/workspace/PCIEVirtTest/pciev.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/ignotus/workspace/PCIEVirtTest/pciev.ko /home/ignotus/workspace/PCIEVirtTest/pciev.o /home/ignotus/workspace/PCIEVirtTest/pciev.mod.o;  true
