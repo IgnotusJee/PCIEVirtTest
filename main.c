@@ -110,6 +110,24 @@ static bool __load_configs(struct pciev_config *config)
 	return true;
 }
 
+static void PCIEV_STORAGE_INIT(struct pciev_dev *pciev_vdev) {
+	PCIEV_INFO("Storage: %#010lx-%#010lx (%lu MiB)\n",
+			   pciev_vdev->config.storage_start,
+			   pciev_vdev->config.storage_start + pciev_vdev->config.storage_size,
+			   BYTE_TO_MB(pciev_vdev->config.storage_size));
+
+	pciev_vdev->storage_mapped = memremap(pciev_vdev->config.storage_start,
+										  pciev_vdev->config.storage_size, MEMREMAP_WB);
+
+	if (pciev_vdev->storage_mapped == NULL)
+		PCIEV_ERROR("Failed to map storage memory.\n");
+}
+
+static void PCIEV_STORAGE_FINAL(struct pciev_dev *pciev_vdev) {
+	if (pciev_vdev->storage_mapped)
+		memunmap(pciev_vdev->storage_mapped);
+}
+
 static int PCIEV_init(void) {
 	int ret = 0;
 
@@ -120,6 +138,8 @@ static int PCIEV_init(void) {
 	if (!__load_configs(&pciev_vdev->config)) {
 		goto ret_err;
 	}
+
+	PCIEV_STORAGE_INIT(pciev_vdev);
 
 	if (!PCIEV_PCI_INIT(pciev_vdev)) {
 		goto ret_err;
@@ -144,6 +164,7 @@ static void PCIEV_exit(void) {
 		pci_remove_root_bus(pciev_vdev->virt_bus);
 	}
 
+	PCIEV_STORAGE_FINAL(pciev_vdev);
 	VDEV_FINALIZE(pciev_vdev);
 
 	PCIEV_INFO("Virtual PCIE device closed\n");

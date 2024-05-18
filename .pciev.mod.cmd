@@ -1,0 +1,1 @@
+cmd_/home/ignotus/workspace/PCIEVirtTest/pciev.mod := { echo  /home/ignotus/workspace/PCIEVirtTest/main.o /home/ignotus/workspace/PCIEVirtTest/pci.o;  echo; } > /home/ignotus/workspace/PCIEVirtTest/pciev.mod

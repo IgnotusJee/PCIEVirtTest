@@ -1,0 +1,1 @@
+cmd_/home/ignotus/workspace/PCIEVirtTest/pciev.o := ld -m elf_x86_64 -z noexecstack   -r -o /home/ignotus/workspace/PCIEVirtTest/pciev.o /home/ignotus/workspace/PCIEVirtTest/main.o /home/ignotus/workspace/PCIEVirtTest/pci.o

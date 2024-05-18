@@ -38,6 +38,10 @@
 #define MB(m) ((m) << 20)
 #define GB(g) ((g) << 30)
 
+#define BYTE_TO_KB(b) ((b) >> 10)
+#define BYTE_TO_MB(b) ((b) >> 20)
+#define BYTE_TO_GB(b) ((b) >> 30)
+
 struct pciev_config {
 	unsigned long memmap_start; // byte
 	unsigned long memmap_size; // byte
