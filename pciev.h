@@ -48,6 +48,8 @@ struct pciev_config {
 
 	unsigned long storage_start; //byte
 	unsigned long storage_size; // byte
+
+	unsigned int cpu_nr_dispatcher;
 };
 
 struct pciev_dev {
@@ -62,6 +64,7 @@ struct pciev_dev {
 	struct pci_dev *pdev;
 
 	struct pciev_config config;
+	struct task_struct *pciev_dispatcher;
 
 	void *storage_mapped;
 
@@ -69,7 +72,7 @@ struct pciev_dev {
 
 	bool intx_disabled;
 
-	// struct __pcie_bar *old_bar;
+	struct pciev_bar *old_bar;
 	struct pciev_bar __iomem *bar;
 
 	// u32 *old_dbs;

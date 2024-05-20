@@ -20,6 +20,7 @@ struct pciev_dev *pciev_vdev = NULL;
 
 static unsigned long memmap_start = 0;
 static unsigned long memmap_size = 0;
+static unsigned int cpu = 0;
 
 static int set_parse_mem_param(const char *val, const struct kernel_param *kp)
 {
@@ -37,6 +38,37 @@ module_param_cb(memmap_start, &ops_parse_mem_param, &memmap_start, 0444);
 MODULE_PARM_DESC(memmap_start, "Reserved memory address");
 module_param_cb(memmap_size, &ops_parse_mem_param, &memmap_size, 0444);
 MODULE_PARM_DESC(memmap_size, "Reserved memory size");
+module_param(cpu, uint, 0644);
+MODULE_PARM_DESC(cpu, "CPU core to do dispatcher jobs");
+
+static int pciev_dispatcher(void *data) {
+	PCIEV_INFO("pciev_dispatcher started on cpu %d (node %d)\n",
+			   pciev_vdev->config.cpu_nr_dispatcher,
+			   cpu_to_node(pciev_vdev->config.cpu_nr_dispatcher));
+	
+	while (!kthread_should_stop()) {
+		pciev_proc_bars();
+
+		cond_resched();
+	}
+
+	return 0;
+}
+
+static void PCIEV_DISPATCHER_INIT(struct pciev_dev *pciev_vdev)
+{
+	pciev_vdev->pciev_dispatcher = kthread_create(pciev_dispatcher, NULL, "pciev_dispatcher");
+	kthread_bind(pciev_vdev->pciev_dispatcher, pciev_vdev->config.cpu_nr_dispatcher);
+	wake_up_process(pciev_vdev->pciev_dispatcher);
+}
+
+static void PCIEV_DISPATCHER_FINAL(struct pciev_dev *pciev_vdev)
+{
+	if (!IS_ERR_OR_NULL(pciev_vdev->pciev_dispatcher)) {
+		kthread_stop(pciev_vdev->pciev_dispatcher);
+		pciev_vdev->pciev_dispatcher = NULL;
+	}
+}
 
 #ifdef CONFIG_X86
 static int __validate_configs_arch(void)
@@ -84,6 +116,11 @@ static int __validate_configs(void)
 		return -EINVAL;
 	}
 
+	if (!cpu) {
+		PCIEV_ERROR("[cpu] shoud be spcified\n");
+		return -EINVAL;
+	}
+
 	if (__validate_configs_arch()) {
 		return -EPERM;
 	}
@@ -94,8 +131,6 @@ static int __validate_configs(void)
 static bool __load_configs(struct pciev_config *config)
 {
 	bool first = true;
-	unsigned int cpu_nr;
-	char *cpu;
 
 	if (__validate_configs() < 0) {
 		return false;
@@ -106,6 +141,8 @@ static bool __load_configs(struct pciev_config *config)
 	// storage space starts from 1M offset
 	config->storage_start = memmap_start + MB(1);
 	config->storage_size = memmap_size - MB(1);
+
+	config->cpu_nr_dispatcher = cpu;
 
 	return true;
 }
@@ -145,6 +182,8 @@ static int PCIEV_init(void) {
 		goto ret_err;
 	}
 
+	PCIEV_DISPATCHER_INIT(pciev_vdev);
+
 	pci_bus_add_devices(pciev_vdev->virt_bus);
 
 	PCIEV_INFO("Virtual PCIE device created\n");
@@ -163,6 +202,8 @@ static void PCIEV_exit(void) {
 		pci_stop_root_bus(pciev_vdev->virt_bus);
 		pci_remove_root_bus(pciev_vdev->virt_bus);
 	}
+
+	PCIEV_DISPATCHER_FINAL(pciev_vdev);
 
 	PCIEV_STORAGE_FINAL(pciev_vdev);
 	VDEV_FINALIZE(pciev_vdev);

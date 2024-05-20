@@ -69,9 +69,15 @@ void pciev_signal_irq(int msi_index)
  */
 void pciev_proc_bars(void)
 {
-	// volatile struct __pcie_bar *old_bar = pciev_vdev->old_bar;
-	// volatile struct pciev_bar *bar = pciev_vdev->bar;
+	volatile struct pciev_bar *old_bar = pciev_vdev->old_bar;
+	volatile struct pciev_bar *bar = pciev_vdev->bar;
 	// unsigned int num_pages, i;
+
+	if (old_bar->storage_offset != bar->storage_offset) {
+		PCIEV_INFO("storage offset modified from 0x%llx to 0x%llx by another process.\n", old_bar->storage_offset, bar->storage_offset);
+		old_bar->storage_offset = bar->storage_offset;
+		// memcpy(&old_bar->storage_offset, &bar->storage_offset, sizeof(old_bar->storage_offset));
+	}
 
 #if 0 /* Read-only register */
 	if (old_bar->cap != bar->u_cap) {
@@ -316,10 +322,14 @@ static void __init_pciev_bar(struct pci_dev *dev)
 		memremap(pci_resource_start(dev, 0), PAGE_SIZE, MEMREMAP_WT);
 	BUG_ON(!bar);
 
+	PCIEV_INFO("remap bar address: %p", bar);
+
 	pciev_vdev->bar = bar;
 	memset(bar, 0x0, PAGE_SIZE);
 
 	bar->storage_offset = MB(1);
+
+	PCIEV_INFO("in bar data: 0x%llx 0x%llx.\n", bar->io_cnt, bar->storage_offset);
 
 	// pciev_vdev->dbs = ((void *)bar) + PAGE_SIZE;
 
@@ -363,13 +373,24 @@ static struct pci_bus *__create_pci_bus(void)
 		// BUG_ON(!pciev_vdev->old_dbs && "allocating old DBs memory");
 		// memcpy(pciev_vdev->old_dbs, pciev_vdev->dbs, sizeof(*pciev_vdev->old_dbs));
 
-		// pciev_vdev->old_bar = kzalloc(PAGE_SIZE, GFP_KERNEL);
-		// BUG_ON(!pciev_vdev->old_bar && "allocating old BAR memory");
-		// memcpy(pciev_vdev->old_bar, pciev_vdev->bar, sizeof(*pciev_vdev->old_bar));
+		pciev_vdev->old_bar = kzalloc(PAGE_SIZE, GFP_KERNEL);
+		PCIEV_INFO("old_bar: %p, bar: %p\n", pciev_vdev->old_bar, pciev_vdev->bar);
+		BUG_ON(!pciev_vdev->old_bar && "allocating old BAR memory");
+		memcpy(pciev_vdev->old_bar, pciev_vdev->bar, sizeof(*pciev_vdev->old_bar));
+		PCIEV_INFO("old_bar: 0x%llx 0x%llx, bar: 0x%llx 0x%llx\n", pciev_vdev->old_bar->io_cnt, pciev_vdev->old_bar->storage_offset, pciev_vdev->bar->io_cnt, pciev_vdev->bar->storage_offset);
+		*pciev_vdev->bar = (struct pciev_bar) {
+			.io_cnt = 3,
+			.storage_offset = 114514,
+		};
+		*pciev_vdev->old_bar = (struct pciev_bar){
+			.io_cnt = 3,
+			.storage_offset = 114514,
+		};
+		PCIEV_INFO("old_bar: 0x%llx 0x%llx, bar: 0x%llx 0x%llx\n", pciev_vdev->old_bar->io_cnt, pciev_vdev->old_bar->storage_offset, pciev_vdev->bar->io_cnt, pciev_vdev->bar->storage_offset);
 
 		pciev_vdev->msix_table =
 			memremap(pci_resource_start(pciev_vdev->pdev, 0) + PAGE_SIZE * 2,
-				 NR_MAX_IO_QUEUE * PCI_MSIX_ENTRY_SIZE, MEMREMAP_WT);
+					 NR_MAX_IO_QUEUE * PCI_MSIX_ENTRY_SIZE, MEMREMAP_WT);
 		memset(pciev_vdev->msix_table, 0x00, NR_MAX_IO_QUEUE * PCI_MSIX_ENTRY_SIZE);
 	}
 
