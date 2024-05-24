@@ -3,7 +3,8 @@
 
 struct pciev_bar {
 	uint64_t io_cnt;
-	uint64_t storage_offset;
+	uint64_t storage_start;
+	uint64_t storage_size;
 };
 
 // pci configuration uses little-endian

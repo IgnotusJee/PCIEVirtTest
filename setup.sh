@@ -1,1 +1,1 @@
-insmod pciev.ko memmap_start=3G memmap_size=512M cpu=3
+insmod pciev.ko memmap_start=5G memmap_size=1G cpu=3

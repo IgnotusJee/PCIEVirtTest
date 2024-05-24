@@ -182,7 +182,7 @@ static int PCIEV_init(void) {
 		goto ret_err;
 	}
 
-	PCIEV_DISPATCHER_INIT(pciev_vdev);
+	// PCIEV_DISPATCHER_INIT(pciev_vdev);
 
 	pci_bus_add_devices(pciev_vdev->virt_bus);
 
@@ -203,7 +203,7 @@ static void PCIEV_exit(void) {
 		pci_remove_root_bus(pciev_vdev->virt_bus);
 	}
 
-	PCIEV_DISPATCHER_FINAL(pciev_vdev);
+	// PCIEV_DISPATCHER_FINAL(pciev_vdev);
 
 	PCIEV_STORAGE_FINAL(pciev_vdev);
 	VDEV_FINALIZE(pciev_vdev);
